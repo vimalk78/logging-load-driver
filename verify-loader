@@ -27,13 +27,12 @@ from collections import defaultdict
 REPORT_INTERVAL = 10
 MB = 1024 * 1024
 
-# if running verify-loader as a background process,
-# we can still do a kill -2 $pid to make it exit
-# the main loop and print the stats
-def handle_sig_int(signum, frame):
+# If running verify-loader as a background process, we can still do a kill
+# -INT or kill -TERM to make it exit the main loop and print the stats.
+def handle_sig_term(signum, frame):
     raise KeyboardInterrupt
 
-signal.signal(signal.SIGINT, handle_sig_int)
+signal.signal(signal.SIGTERM, handle_sig_term)
 
 
 class Context(object):
@@ -59,7 +58,7 @@ class Context(object):
             self.prev = seq
             return None
         elif seq == (self.prev + 1):
-            # normal and expected code path
+            # Normal and expected code path
             self.prev = seq
             return None
         else:
@@ -261,7 +260,7 @@ if __name__ == '__main__':
         if args.readjournal:
             from systemd import journal
             j = journal.Reader()
-            # the fileno() method ends up creating the inotify file descriptor
+            # The fileno() method ends up creating the inotify file descriptor
             # which in turn prevents this client from leaking open journal log
             # files.
             j.fileno()
@@ -271,7 +270,12 @@ if __name__ == '__main__':
                 while True:
                     for entry in j:
                         yield entry['MESSAGE']
-                    j.wait()
+                    # We have to wait in a loop here because the journal code
+                    # runs as C code, where Python exception handling is not
+                    # in play.
+                    ret = journal.NOP
+                    while ret == journal.NOP:
+                        ret = j.wait(0.5)
             input_gen = jreader()
         else:
             input_gen = os.fdopen(sys.stdin.fileno(), 'r', 0)
