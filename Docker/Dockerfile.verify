@@ -1,0 +1,11 @@
+#FROM registry.fedoraproject.org/fedora
+FROM python:3.7-alpine
+
+ENV INTERVAL=10 FILE=/var/log/load-test-out
+ARG INFILE=${FILE}
+
+#RUN dnf -y install python
+COPY ./verify-loader /
+RUN chmod +x /verify-loader
+USER 0
+CMD /verify-loader --report-interval=${INTERVAL} ${FILE}

@@ -1,11 +1,12 @@
-FROM registry.fedoraproject.org/fedora
+#FROM registry.fedoraproject.org/fedora
+FROM python:3.7-alpine
 
 ENV MSGPERSEC=0 REPORT_INTERVAL=10 PAYLOAD_SIZE=1024 \
     DISTRIBUTION=gaussian PAYLOAD_GEN=random \
     STDDEV=32 OUTPUT=stdout REPORT=inline \
     TOTAL_SIZE=0
 
-RUN dnf -y install python
+#RUN dnf -y install python
 COPY ./loader /
 RUN chmod +x /loader
 # build like this:
